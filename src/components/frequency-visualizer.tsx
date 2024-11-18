@@ -30,9 +30,8 @@ const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({ analyser, isR
 
       for (let i = 0; i < bufferLength; i++) {
         const barHeight = (dataArray[i] / 255) * canvas.height;
-        const frequency = (i * 44100) / (analyser.fftSize * 2); // ->>> this converts the color to Hz
+        const frequency = (i * 44100) / (analyser.fftSize * 2);
 
-        // ->>> Color based on frequency range
         let color = '#666';
         if (frequency < 100) color = '#FF6B6B';
         else if (frequency < 200) color = '#4ECDC4';
@@ -58,14 +57,16 @@ const FrequencyVisualizer: React.FC<FrequencyVisualizerProps> = ({ analyser, isR
   }, [analyser, isRecording]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute bottom-4 left-4 rounded-lg shadow-lg"
-      width="300"
-      height="100"
-      style={{ background: 'rgba(0,0,0,0.7)' }}
-    />
+    <div className="absolute bottom-0 left-0 w-full sm:w-auto sm:bottom-4 sm:left-4 p-2 sm:p-0">
+      <canvas
+        ref={canvasRef}
+        className="w-full sm:w-[300px] h-[80px] sm:h-[100px] rounded-none sm:rounded-lg shadow-lg"
+        width={300}
+        height={100}
+        style={{ background: 'rgba(0,0,0,0.7)' }}
+      />
+    </div>
   );
 };
 
-export default FrequencyVisualizer;
+export default FrequencyVisualizer

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Controls from './controls';
 import DrawingCanvas from './drawing-canvas';
 import WelcomeMessage from './welcome-message';
@@ -18,13 +18,51 @@ const VoiceCanvas: React.FC = () => {
   const currentPoint = useRef<Point>({ x: 0, y: 0 });
   const animationRef = useRef<number>();
 
-  const getDirection = (frequency: number): string => {
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        // Update canvas dimensions
+        canvas.width = window.innerWidth * 2;
+        canvas.height = window.innerHeight * 2;
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
 
-    if (frequency < 120) return 'left';     
-    if (frequency < 220) return 'right';   
-    if (frequency < 320) return 'up';      
-    if (frequency < 420) return 'down';    
-    return 'curve';                        
+        // Update stored dimensions
+        canvasDimensions.current = {
+          width: canvas.width / 2,
+          height: canvas.height / 2
+        };
+
+        // Reset current point to center
+        currentPoint.current = {
+          x: canvasDimensions.current.width / 2,
+          y: canvasDimensions.current.height / 2
+        };
+
+        // If there's a context, update the scale
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.scale(2, 2);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const getDirection = (frequency: number): string => {
+    if (frequency < 120) return 'left';
+    if (frequency < 220) return 'right';
+    if (frequency < 320) return 'up';
+    if (frequency < 420) return 'down';
+    return 'curve';
   };
 
   const movePoint = (direction: string, distance: number): Point => {
@@ -56,7 +94,6 @@ const VoiceCanvas: React.FC = () => {
         break;
     }
 
-    // Keep point within bounds with some padding
     return {
       x: Math.max(10, Math.min(width - 10, newPoint.x)),
       y: Math.max(10, Math.min(height - 10, newPoint.y))
@@ -70,12 +107,10 @@ const VoiceCanvas: React.FC = () => {
     const dataArray = new Uint8Array(bufferLength);
     analyserRef.current.getByteFrequencyData(dataArray);
 
-    // Find the dominant frequency
     let maxValue = 0;
     let maxIndex = 0;
     let totalVolume = 0;
 
-    // Analyze a specific range of frequencies (20Hz - 2000Hz)
     const minBin = Math.floor((20 * analyserRef.current.fftSize) / 44100);
     const maxBin = Math.floor((2000 * analyserRef.current.fftSize) / 44100);
     
@@ -91,9 +126,7 @@ const VoiceCanvas: React.FC = () => {
     const averageVolume = totalVolume / binCount;
     const normalizedVolume = averageVolume / 255;
     
-    // Lowered threshold for better sensitivity to quiet sounds
     if (normalizedVolume > 0.02) {
-      // Convert frequency bin to Hz (approximate)
       const frequency = (maxIndex * 44100) / analyserRef.current.fftSize;
       const direction = getDirection(frequency);
       const newPoint = movePoint(direction, normalizedVolume * 100);
@@ -111,7 +144,7 @@ const VoiceCanvas: React.FC = () => {
       };
       
       ctx.strokeStyle = colors[direction as keyof typeof colors];
-      ctx.lineWidth = Math.max(2, normalizedVolume * 20); // Minimum line width of 2
+      ctx.lineWidth = Math.max(2, normalizedVolume * 20);
       ctx.stroke();
 
       currentPoint.current = newPoint;
@@ -127,7 +160,7 @@ const VoiceCanvas: React.FC = () => {
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,
-          channelCount: 1, 
+          channelCount: 1,
         } 
       });
       
@@ -135,11 +168,10 @@ const VoiceCanvas: React.FC = () => {
       analyserRef.current = audioContextRef.current.createAnalyser();
       const source = audioContextRef.current.createMediaStreamSource(stream);
       
-      // Adjust analyzer settings for better frequency detection
-      analyserRef.current.fftSize = 8192; // the frequency resolution
+      analyserRef.current.fftSize = 8192;
       analyserRef.current.smoothingTimeConstant = 0.8;
-      analyserRef.current.minDecibels = -90; // sensitivity for quiet sounds
-      analyserRef.current.maxDecibels = -10; // this will prevent clipping
+      analyserRef.current.minDecibels = -90;
+      analyserRef.current.maxDecibels = -10;
       
       source.connect(analyserRef.current);
       
@@ -185,7 +217,7 @@ const VoiceCanvas: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-screen bg-gray-900">
+    <div className="relative w-full h-screen bg-gray-900 overflow-hidden">
       <DrawingCanvas draw={isRecording ? draw : () => {}} />
       <Controls
         isRecording={isRecording}

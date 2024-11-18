@@ -29,8 +29,8 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ draw }) => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 touch-none overflow-x-auto"
-      style={{ zIndex: 1, pointerEvents: 'none' }}
+      className="absolute inset-0 touch-none"
+      style={{ zIndex: 1 }}
     />
   );
 };

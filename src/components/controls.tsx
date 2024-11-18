@@ -15,7 +15,7 @@ const Controls: React.FC<ControlsProps> = ({
   onClear,
 }) => {
   return (
-    <div className="absolute top-4 right-4 flex gap-4 z-50">
+    <div className="fixed bottom-[100px] sm:bottom-auto sm:top-4 right-4 flex gap-4 z-50">
       <button
         onClick={onClear}
         className="p-3 bg-gray-800/90 backdrop-blur-sm rounded-full hover:bg-gray-700/90 transition-colors shadow-lg"
